@@ -47,6 +47,7 @@ export interface WeatherReport {
   forecast24Hours: HourlyForecast[];
   metrics: DetailedMetrics;
   cozyAdvice: string;
+  isFallback?: boolean;
 }
 
 export interface FavoriteCity {

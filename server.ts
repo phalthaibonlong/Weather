@@ -13,6 +13,7 @@ app.use(express.json());
 // Initialize Gemini SDK with named parameters
 const apiKey = process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
+let geminiDisabledUntil = 0; // Timestamp to temporarily disable Gemini when rate-limited or quota-exhausted
 
 if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
   try {
@@ -26,7 +27,7 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
     });
     console.log("Gemini API initialized successfully.");
   } catch (err) {
-    console.error("Failed to initialize Gemini API:", err);
+    console.log("Failed to initialize Gemini API:", err);
   }
 } else {
   console.log("No valid GEMINI_API_KEY found. Falling back to deterministic simulation.");
@@ -205,7 +206,8 @@ function generateMockWeather(cityName: string): any {
       visibility: { value: visibilityVal, description: visibilityDesc },
       pressure: { value: pressureVal, trend: pressureTrend }
     },
-    cozyAdvice
+    cozyAdvice,
+    isFallback: true
   };
 }
 
@@ -322,15 +324,16 @@ app.get("/api/weather", async (req, res) => {
     return res.status(400).json({ error: "City parameter is required." });
   }
 
-  // Check if Gemini is enabled and valid
-  if (ai) {
+  // Check if Gemini is enabled and valid, and not temporarily disabled due to quota limits
+  if (ai && Date.now() > geminiDisabledUntil) {
     try {
       console.log(`Querying Gemini API for city: ${city}`);
       const prompt = `Generate a cozy, highly aesthetic weather report for the city of "${city}".
 Provide realistic weather data that fits the current seasonal climate of this region.
 Also provide custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Humidity, Wind speed & direction, Visibility, Pressure), and a delightful, sweet piece of 'Stay Cozy' styling/lifestyle advice tailored specifically to this weather condition.`;
 
-      const response = await ai.models.generateContent({
+      // 6-second timeout race to keep the UX extremely responsive
+      const generatePromise = ai.models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
         config: {
@@ -340,13 +343,29 @@ Also provide custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Hum
         },
       });
 
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Gemini API request timed out after 6 seconds")), 6000);
+      });
+
+      const response = await Promise.race([generatePromise, timeoutPromise]);
+
       if (response && response.text) {
         const data = JSON.parse(response.text.trim());
         return res.json(data);
       }
-    } catch (err) {
-      console.error("Gemini API error, falling back to mock generator:", err);
+    } catch (err: any) {
+      const errMsg = String(err?.message || err || "").toLowerCase();
+      const isQuotaOrTimeout = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit") || errMsg.includes("exhausted") || errMsg.includes("timeout") || errMsg.includes("time out");
+      
+      if (isQuotaOrTimeout) {
+        console.log("Gemini API rate limit, quota exceeded, or timeout. Bypassing Gemini API and using local deterministic weather generator for the next 5 minutes. Details:", err?.message || err);
+        geminiDisabledUntil = Date.now() + 5 * 60 * 1000;
+      } else {
+        console.log("Gemini API error, falling back to mock generator:", err);
+      }
     }
+  } else if (ai) {
+    console.log(`Gemini API temporarily bypassed for city: ${city} (resuming in ${Math.round((geminiDisabledUntil - Date.now()) / 1000)}s)`);
   }
 
   // Fallback to local mock generator
@@ -364,7 +383,7 @@ app.get("/api/weather/by-location", async (req, res) => {
     return res.status(400).json({ error: "Latitude and Longitude are required." });
   }
 
-  if (ai) {
+  if (ai && Date.now() > geminiDisabledUntil) {
     try {
       console.log(`Querying Gemini API for location lat:${lat}, lon:${lon}`);
       const prompt = `Identify the nearest major city/region for coordinates latitude: ${lat}, longitude: ${lon}. 
@@ -372,7 +391,8 @@ Then generate a cozy, highly aesthetic weather report for this region.
 Provide realistic weather data that fits the current seasonal climate of this region.
 Include custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Humidity, Wind speed & direction, Visibility, Pressure), and a delightful piece of 'Stay Cozy' styling advice.`;
 
-      const response = await ai.models.generateContent({
+      // 6-second timeout race to keep the UX extremely responsive
+      const generatePromise = ai.models.generateContent({
         model: "gemini-3.5-flash",
         contents: prompt,
         config: {
@@ -382,13 +402,29 @@ Include custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Humidity
         },
       });
 
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Gemini API request timed out after 6 seconds")), 6000);
+      });
+
+      const response = await Promise.race([generatePromise, timeoutPromise]);
+
       if (response && response.text) {
         const data = JSON.parse(response.text.trim());
         return res.json(data);
       }
-    } catch (err) {
-      console.error("Gemini reverse-geo weather error, falling back to Phnom Penh:", err);
+    } catch (err: any) {
+      const errMsg = String(err?.message || err || "").toLowerCase();
+      const isQuotaOrTimeout = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit") || errMsg.includes("exhausted") || errMsg.includes("timeout") || errMsg.includes("time out");
+      
+      if (isQuotaOrTimeout) {
+        console.log("Gemini reverse-geo weather rate limit, quota exceeded, or timeout. Bypassing Gemini API for the next 5 minutes. Details:", err?.message || err);
+        geminiDisabledUntil = Date.now() + 5 * 60 * 1000;
+      } else {
+        console.log("Gemini reverse-geo weather error, falling back to Phnom Penh:", err);
+      }
     }
+  } else if (ai) {
+    console.log(`Gemini API temporarily bypassed for coords lat:${lat}, lon:${lon} (resuming in ${Math.round((geminiDisabledUntil - Date.now()) / 1000)}s)`);
   }
 
   // Fallback to deterministic Phnom Penh coordinates or close mock

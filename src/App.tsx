@@ -300,9 +300,17 @@ export default function App() {
                         />
                       </button>
                     </div>
-                    <p className="font-sans text-base text-on-surface-variant font-bold mb-6">
-                      {weather.dateText} | {weather.timeText}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mb-6 justify-center md:justify-start">
+                      <p className="font-sans text-base text-on-surface-variant font-bold">
+                        {weather.dateText} | {weather.timeText}
+                      </p>
+                      {weather.isFallback && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                          Local Cozy Fallback Mode
+                        </span>
+                      )}
+                    </div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-6">
                       <span className="bubbly-text text-7xl md:text-8xl text-primary font-black tracking-tighter">
