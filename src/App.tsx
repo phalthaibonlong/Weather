@@ -1008,11 +1008,11 @@ export default function App() {
                         <div 
                           key={item.id}
                           onClick={() => fetchWeatherByCity(item.city)}
-                          className="p-6 bg-white border-2 border-surface-container rounded-3xl hover:border-primary-container/80 hover:translate-y-[-2px] active:scale-98 transition-all cursor-pointer flex justify-between items-center shadow-sm relative group"
+                          className="p-6 bg-surface-container-lowest border-2 border-surface-container rounded-3xl hover:border-primary-container/80 hover:translate-y-[-2px] active:scale-98 transition-all cursor-pointer flex justify-between items-center shadow-sm relative group"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center">
-                              {getWeatherIcon(item.condition, "w-8 h-8")}
+                              {getWeatherIcon(item.condition, "w-8 h-8", weather?.isNight)}
                             </div>
                             <div>
                               <h4 className="bubbly-text font-black text-lg text-primary">{item.city}</h4>
@@ -1026,7 +1026,7 @@ export default function App() {
                             </span>
                             <button 
                               onClick={(e) => deleteHistoryItem(item.id, e)}
-                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border border-rose-200"
+                              className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border border-rose-500/20"
                               title="Delete entry"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1062,7 +1062,7 @@ export default function App() {
 
                   {favorites.length === 0 ? (
                     <div className="text-center py-16 flex flex-col items-center">
-                      <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-4 border-2 border-pink-100">
+                      <div className="w-20 h-20 bg-pink-500/10 rounded-full flex items-center justify-center mb-4 border-2 border-pink-500/20">
                         <Heart className="w-10 h-10 text-pink-400" />
                       </div>
                       <h3 className="bubbly-text text-lg font-bold text-primary">Your favorite chest is empty</h3>
@@ -1074,7 +1074,7 @@ export default function App() {
                         <div 
                           key={idx}
                           onClick={() => fetchWeatherByCity(fav.city)}
-                          className="p-6 bg-white border border-pink-100 rounded-[2rem] hover:shadow-md hover:translate-y-[-3px] transition-all cursor-pointer flex flex-col justify-between min-h-[180px]"
+                          className="p-6 bg-surface-container-lowest border border-primary-container/30 rounded-[2rem] hover:shadow-md hover:translate-y-[-3px] transition-all cursor-pointer flex flex-col justify-between min-h-[180px]"
                         >
                           <div className="flex justify-between items-start">
                             <div>
@@ -1098,7 +1098,7 @@ export default function App() {
                               {formatTemp(fav.tempCelsius)}
                             </span>
                             <div className="flex flex-col items-end">
-                              {getWeatherIcon(fav.condition, "w-8 h-8")}
+                              {getWeatherIcon(fav.condition, "w-8 h-8", weather?.isNight)}
                               <span className="text-[10px] font-bold text-on-surface-variant uppercase mt-1">{fav.condition}</span>
                             </div>
                           </div>
