@@ -29,6 +29,10 @@ export interface DetailedMetrics {
     value: number;
     description: string;
   };
+  aqi: {
+    value: number;
+    label: 'Good' | 'Moderate' | 'Unhealthy' | 'Very Unhealthy' | 'Hazardous' | string;
+  };
   pressure: {
     value: number;
     trend: 'Stable' | 'Rising' | 'Falling';
@@ -48,6 +52,7 @@ export interface WeatherReport {
   metrics: DetailedMetrics;
   cozyAdvice: string;
   isFallback?: boolean;
+  isNight?: boolean;
 }
 
 export interface FavoriteCity {

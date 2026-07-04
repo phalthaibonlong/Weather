@@ -23,7 +23,7 @@ export default function Sidebar({
   ];
 
   return (
-    <aside id="sidebar-container" className="hidden md:flex flex-col h-screen w-64 bg-surface-container-low border-r-2 border-primary-container p-6 z-30 shadow-sm shadow-primary/10">
+    <aside id="sidebar-container" className="hidden md:flex flex-shrink-0 flex-col h-screen w-64 bg-surface-container-low border-r-2 border-primary-container p-6 z-30 shadow-sm shadow-primary/10 sticky top-0">
       {/* Brand Logo */}
       <div id="brand-logo" className="flex items-center gap-3 mb-10">
         <div className="w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-primary">
@@ -52,7 +52,7 @@ export default function Sidebar({
               className={`w-full flex items-center gap-4 px-6 py-3.5 rounded-full font-bold transition-all relative overflow-hidden ${
                 isActive
                   ? "bg-secondary-container text-on-secondary-container shadow-sm"
-                  : "text-on-surface-variant hover:bg-white/60 hover:text-secondary"
+                  : "text-on-surface-variant hover:bg-surface-container-high/60 hover:text-secondary"
               }`}
             >
               {isActive && (

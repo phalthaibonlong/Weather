@@ -31,6 +31,29 @@ if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
   console.log("No valid GEMINI_API_KEY found. Falling back to deterministic simulation.");
 }
 
+// Helper to wrap a promise with a timeout and prevent unhandled promise rejections
+async function withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, ms);
+  });
+
+  // Attach catch handler directly to original promise to avoid unhandled rejections if it rejects later
+  promise.catch((err) => {
+    // Just swallow it silently to avoid flooding console logs
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 // Deterministic randomizer based on city name to keep weather stable for searches
 function getDeterministicRandom(str: string, index: number) {
   let hash = 0;
@@ -41,8 +64,97 @@ function getDeterministicRandom(str: string, index: number) {
   return val - Math.floor(val);
 }
 
+// Timezone and Time helpers
+function getTimezoneOffsetForCity(cityName: string): number {
+  const name = cityName.toLowerCase().trim();
+  if (name.includes("phnom penh") || name.includes("cambodia") || name.includes("bangkok") || name.includes("thailand") || name.includes("vietnam") || name.includes("hanoi") || name.includes("jakarta")) {
+    return 7;
+  }
+  if (name.includes("tokyo") || name.includes("kyoto") || name.includes("japan") || name.includes("seoul") || name.includes("korea")) {
+    return 9;
+  }
+  if (name.includes("york") || name.includes("ny") || name.includes("nyc") || name.includes("boston") || name.includes("miami") || name.includes("toronto") || name.includes("montreal")) {
+    return -4; // Eastern Daylight Time (July is Daylight Savings)
+  }
+  if (name.includes("london") || name.includes("dublin") || name.includes("uk") || name.includes("ireland")) {
+    return 1; // British Summer Time
+  }
+  if (name.includes("paris") || name.includes("berlin") || name.includes("rome") || name.includes("madrid") || name.includes("amsterdam") || name.includes("brussels") || name.includes("vienna") || name.includes("france") || name.includes("germany") || name.includes("italy") || name.includes("spain")) {
+    return 2; // Central European Summer Time
+  }
+  if (name.includes("sydney") || name.includes("melbourne") || name.includes("canberra") || name.includes("australia")) {
+    return 10;
+  }
+  if (name.includes("moscow") || name.includes("istanbul") || name.includes("baghdad") || name.includes("nairobi") || name.includes("saudi")) {
+    return 3;
+  }
+  if (name.includes("mumbai") || name.includes("delhi") || name.includes("india") || name.includes("calcutta")) {
+    return 5.5;
+  }
+  if (name.includes("reykjavik") || name.includes("iceland") || name.includes("lisbon") || name.includes("portugal")) {
+    return 0;
+  }
+  if (name.includes("los angeles") || name.includes("la") || name.includes("san francisco") || name.includes("seattle") || name.includes("vancouver") || name.includes("california") || name.includes("pdt")) {
+    return -7; // Pacific Daylight Time
+  }
+  if (name.includes("chicago") || name.includes("houston") || name.includes("mexico") || name.includes("dallas")) {
+    return -5; // Central Daylight Time
+  }
+  if (name.includes("denver") || name.includes("salt lake") || name.includes("phoenix") || name.includes("arizona")) {
+    return -6; // Mountain Time
+  }
+  if (name.includes("singapore") || name.includes("manila") || name.includes("beijing") || name.includes("shanghai") || name.includes("hong kong") || name.includes("china") || name.includes("taiwan") || name.includes("taipei")) {
+    return 8;
+  }
+  if (name.includes("dubai") || name.includes("abu dhabi") || name.includes("uae") || name.includes("baku")) {
+    return 4;
+  }
+  if (name.includes("rio") || name.includes("sao paulo") || name.includes("brazil") || name.includes("buenos aires") || name.includes("argentina")) {
+    return -3;
+  }
+  return 0; // default UTC
+}
+
+function getTimezoneOffsetByCoords(latNum: number, lonNum: number): number {
+  let approxOffset = lonNum / 15;
+  let rounded = Math.round(approxOffset);
+  
+  if (latNum > 5 && latNum < 25 && lonNum > 95 && lonNum < 110) return 7; // Indochina
+  if (latNum > 20 && latNum < 45 && lonNum > 120 && lonNum < 150) return 9; // Japan/Korea
+  if (latNum > 24 && latNum < 50 && lonNum > -125 && lonNum < -65) {
+    if (lonNum < -114) return -7;
+    if (lonNum < -104) return -6;
+    if (lonNum < -85) return -5;
+    return -4;
+  }
+  if (latNum > 35 && latNum < 60 && lonNum > -10 && lonNum < 30) {
+    if (lonNum < 2) return 1;
+    return 2;
+  }
+  return rounded;
+}
+
+function getFormattedDateTime(offsetHours: number): { dateText: string, timeText: string, isNight: boolean } {
+  const now = new Date();
+  const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const localDate = new Date(utcMs + (offsetHours * 3600000));
+  
+  const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
+  const dateText = localDate.toLocaleDateString('en-US', options);
+  
+  const hours = localDate.getHours();
+  let hoursStr = hours % 12 || 12;
+  let ampm = hours >= 12 ? 'PM' : 'AM';
+  let mins = String(localDate.getMinutes()).padStart(2, '0');
+  const timeText = `${hoursStr}:${mins} ${ampm}`;
+  
+  const isNight = hours >= 18 || hours < 6;
+  
+  return { dateText, timeText, isNight };
+}
+
 // Local mock generator for fallback
-function generateMockWeather(cityName: string): any {
+function generateMockWeather(cityName: string, offsetHours: number = 0): any {
   const cleanCity = cityName.trim();
   const nameLower = cleanCity.toLowerCase();
   
@@ -163,6 +275,11 @@ function generateMockWeather(cityName: string): any {
   const trends: Array<'Stable' | 'Rising' | 'Falling'> = ["Stable", "Rising", "Falling"];
   const pressureTrend = trends[Math.floor(getDeterministicRandom(cleanCity, 105) * 3)];
 
+  const aqiVal = Math.round(10 + getDeterministicRandom(cleanCity, 106) * 140);
+  let aqiLabel = "Good";
+  if (aqiVal > 100) aqiLabel = "Unhealthy";
+  else if (aqiVal > 50) aqiLabel = "Moderate";
+
   // Create cozy advise based on condition
   let cozyAdvice = "Perfect day to grab a warm matcha latte and wear your favorite knit sweater! 🍵🍂";
   if (condition === "Sunny") {
@@ -177,15 +294,7 @@ function generateMockWeather(cityName: string): any {
     cozyAdvice = "Pleasantly overcast and soft. The perfect weather for oversized hoodies, comfortable socks, and starting a new novel. ☁️🧦📚";
   }
 
-  // Format today's date
-  const dateObj = new Date();
-  const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
-  const dateText = dateObj.toLocaleDateString('en-US', options);
-  
-  let hoursStr = dateObj.getHours() % 12 || 12;
-  let ampm = dateObj.getHours() >= 12 ? 'PM' : 'AM';
-  let mins = String(dateObj.getMinutes()).padStart(2, '0');
-  const timeText = `${hoursStr}:${mins} ${ampm}`;
+  const { dateText, timeText, isNight } = getFormattedDateTime(offsetHours);
 
   return {
     city: cleanCity.charAt(0).toUpperCase() + cleanCity.slice(1),
@@ -195,6 +304,7 @@ function generateMockWeather(cityName: string): any {
     feelsLikeCelsius: baseTemp + (condition === "Sunny" ? 2 : -2),
     dateText,
     timeText,
+    isNight,
     forecast7Days,
     forecast24Hours,
     metrics: {
@@ -202,7 +312,8 @@ function generateMockWeather(cityName: string): any {
       humidity: { value: humidityVal, dewPoint: dewPointVal },
       wind: { speed: windSpeedVal, direction: windDirVal },
       visibility: { value: visibilityVal, description: visibilityDesc },
-      pressure: { value: pressureVal, trend: pressureTrend }
+      pressure: { value: pressureVal, trend: pressureTrend },
+      aqi: { value: aqiVal, label: aqiLabel }
     },
     cozyAdvice,
     isFallback: true
@@ -300,9 +411,20 @@ const weatherReportSchema = {
             }
           },
           required: ["value", "trend"]
+        },
+        aqi: {
+          type: Type.OBJECT,
+          properties: {
+            value: { type: Type.INTEGER, description: "AQI score" },
+            label: { 
+              type: Type.STRING,
+              description: "Must be one of: 'Good', 'Moderate', 'Unhealthy', 'Very Unhealthy', 'Hazardous'"
+            }
+          },
+          required: ["value", "label"]
         }
       },
-      required: ["uvIndex", "humidity", "wind", "visibility", "pressure"]
+      required: ["uvIndex", "humidity", "wind", "visibility", "pressure", "aqi"]
     },
     cozyAdvice: { 
       type: Type.STRING, 
@@ -341,14 +463,19 @@ Also provide custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Hum
         },
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Gemini API request timed out after 6 seconds")), 6000);
-      });
-
-      const response = await Promise.race([generatePromise, timeoutPromise]);
+      const response = await withTimeout(
+        generatePromise,
+        6000,
+        "Gemini API request timed out after 6 seconds"
+      );
 
       if (response && response.text) {
         const data = JSON.parse(response.text.trim());
+        const offset = getTimezoneOffsetForCity(city);
+        const { dateText, timeText, isNight } = getFormattedDateTime(offset);
+        data.dateText = dateText;
+        data.timeText = timeText;
+        data.isNight = isNight;
         return res.json(data);
       }
     } catch (err: any) {
@@ -356,10 +483,10 @@ Also provide custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Hum
       const isQuotaOrTimeout = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit") || errMsg.includes("exhausted") || errMsg.includes("timeout") || errMsg.includes("time out");
       
       if (isQuotaOrTimeout) {
-        console.log("Gemini API rate limit, quota exceeded, or timeout. Bypassing Gemini API and using local deterministic weather generator for the next 5 minutes. Details:", err?.message || err);
+        console.log("Gemini API rate limit or timeout. Bypassing Gemini API and using local deterministic weather generator for the next 5 minutes.");
         geminiDisabledUntil = Date.now() + 5 * 60 * 1000;
       } else {
-        console.log("Gemini API error, falling back to mock generator:", err);
+        console.log("Gemini API error, falling back to mock generator.");
       }
     }
   } else if (ai) {
@@ -368,7 +495,8 @@ Also provide custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Hum
 
   // Fallback to local mock generator
   console.log(`Using deterministic weather generator for: ${city}`);
-  const report = generateMockWeather(city);
+  const offset = getTimezoneOffsetForCity(city);
+  const report = generateMockWeather(city, offset);
   return res.json(report);
 });
 
@@ -400,14 +528,19 @@ Include custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Humidity
         },
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Gemini API request timed out after 6 seconds")), 6000);
-      });
-
-      const response = await Promise.race([generatePromise, timeoutPromise]);
+      const response = await withTimeout(
+        generatePromise,
+        6000,
+        "Gemini API request timed out after 6 seconds"
+      );
 
       if (response && response.text) {
         const data = JSON.parse(response.text.trim());
+        const offset = getTimezoneOffsetByCoords(parseFloat(lat), parseFloat(lon));
+        const { dateText, timeText, isNight } = getFormattedDateTime(offset);
+        data.dateText = dateText;
+        data.timeText = timeText;
+        data.isNight = isNight;
         return res.json(data);
       }
     } catch (err: any) {
@@ -415,19 +548,20 @@ Include custom 7-day and 24-hour forecasts, detailed metrics (UV Index, Humidity
       const isQuotaOrTimeout = errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit") || errMsg.includes("exhausted") || errMsg.includes("timeout") || errMsg.includes("time out");
       
       if (isQuotaOrTimeout) {
-        console.log("Gemini reverse-geo weather rate limit, quota exceeded, or timeout. Bypassing Gemini API for the next 5 minutes. Details:", err?.message || err);
+        console.log("Gemini reverse-geo weather rate limit or timeout. Bypassing Gemini API for the next 5 minutes.");
         geminiDisabledUntil = Date.now() + 5 * 60 * 1000;
       } else {
-        console.log("Gemini reverse-geo weather error, falling back to Phnom Penh:", err);
+        console.log("Gemini reverse-geo weather error, falling back to Phnom Penh.");
       }
     }
   } else if (ai) {
     console.log(`Gemini API temporarily bypassed for coords lat:${lat}, lon:${lon} (resuming in ${Math.round((geminiDisabledUntil - Date.now()) / 1000)}s)`);
   }
 
-  // Fallback to deterministic Phnom Penh coordinates or close mock
-  console.log("Using default location (Phnom Penh, Cambodia) for fallback coordinates");
-  const report = generateMockWeather("Phnom Penh");
+  // Fallback to deterministic coordinates or close mock
+  const offset = getTimezoneOffsetByCoords(parseFloat(lat), parseFloat(lon));
+  console.log(`Using default location or mock for fallback coordinates: lat=${lat}, lon=${lon}, offset=${offset}`);
+  const report = generateMockWeather("Local Region", offset);
   return res.json(report);
 });
 

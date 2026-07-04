@@ -49,7 +49,7 @@ export default function Navbar({
           <button
             id="settings-navbar-btn-mobile"
             onClick={onOpenSettings}
-            className="p-2 text-primary hover:bg-surface-container-high rounded-full transition-all bg-white shadow-sm border border-primary-container/20"
+            className="p-2 text-primary hover:bg-surface-container-high rounded-full transition-all bg-surface-container-lowest shadow-sm border border-primary-container/20"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -62,7 +62,7 @@ export default function Navbar({
             {isCelsius ? "°C" : "°F"}
           </button>
 
-          <div id="user-avatar-pill-mobile" className="w-8 h-8 bg-secondary-fixed-dim rounded-full flex items-center justify-center overflow-hidden border border-white shadow-sm">
+          <div id="user-avatar-pill-mobile" className="w-8 h-8 bg-secondary-fixed-dim rounded-full flex items-center justify-center overflow-hidden border border-surface-container-lowest shadow-sm">
             <span className="text-base">👩‍🎨</span>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function Navbar({
       {/* Top Navbar Actions - Desktop Only */}
       <div id="top-navbar-actions" className="hidden md:flex items-center gap-3">
         {/* Active City indicator pill */}
-        <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-white/70 rounded-full border border-primary-container text-primary text-xs font-bold">
+        <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-surface-container-lowest/70 rounded-full border border-primary-container text-primary text-xs font-bold">
           <MapPin className="w-3.5 h-3.5" />
           <span>{activeCity || "Loading..."}</span>
         </div>
@@ -121,7 +121,7 @@ export default function Navbar({
         <button
           id="settings-navbar-btn"
           onClick={onOpenSettings}
-          className="p-2.5 text-primary hover:bg-surface-container-high rounded-full transition-all cursor-pointer shadow-sm bg-white"
+          className="p-2.5 text-primary hover:bg-surface-container-high rounded-full transition-all cursor-pointer shadow-sm bg-surface-container-lowest"
           title="Aether Settings"
         >
           <Settings className="w-5 h-5" />
@@ -139,7 +139,7 @@ export default function Navbar({
         </button>
 
         {/* User avatar indicator */}
-        <div id="user-avatar-pill" className="w-10 h-10 bg-secondary-fixed-dim rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-sm cursor-pointer">
+        <div id="user-avatar-pill" className="w-10 h-10 bg-secondary-fixed-dim rounded-full flex items-center justify-center overflow-hidden border-2 border-surface-container-lowest shadow-sm cursor-pointer">
           <span className="text-xl">👩‍🎨</span>
         </div>
       </div>

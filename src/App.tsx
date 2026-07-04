@@ -25,7 +25,9 @@ import {
   Plus,
   Trash2,
   X,
-  Navigation
+  Navigation,
+  Wind,
+  Moon
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -36,6 +38,214 @@ const INITIAL_FAVORITES: FavoriteCity[] = [
   { city: "Paris", country: "France", tempCelsius: 16, condition: "Rainy" },
   { city: "Reykjavik", country: "Iceland", tempCelsius: 3, condition: "Snowy" }
 ];
+
+// Helper to generate dynamic weather-based themes via CSS variables
+function getThemeStyles(condition: string = "Sunny", isNight: boolean = false): React.CSSProperties {
+  let colors = {
+    primary: "#78555e",
+    primaryContainer: "#ffd1dc",
+    secondary: "#725477",
+    secondaryContainer: "#fad3fd",
+    surface: "#fff7fb",
+    onSurface: "#231725",
+    onSurfaceVariant: "#4f4446",
+    surfaceContainer: "#fde7fc",
+    surfaceContainerHigh: "#f7e2f6",
+    surfaceContainerHighest: "#f1dcf0",
+    surfaceContainerLow: "#ffeffc",
+    surfaceContainerLowest: "#ffffff",
+    background: "linear-gradient(135deg, #f7e2f6 0%, #fff7fb 50%, #ffd1dc 100%)"
+  };
+
+  if (condition === "Sunny") {
+    if (!isNight) {
+      colors = {
+        primary: "#9E6100",
+        primaryContainer: "#FFF3E0",
+        secondary: "#795548",
+        secondaryContainer: "#FFE0B2",
+        surface: "#FFFDF9",
+        onSurface: "#3E2723",
+        onSurfaceVariant: "#5D4037",
+        surfaceContainer: "#FFF1E6",
+        surfaceContainerHigh: "#FFE4D6",
+        surfaceContainerHighest: "#FFD8C6",
+        surfaceContainerLow: "#FFF8F2",
+        surfaceContainerLowest: "#FFFFFF",
+        background: "linear-gradient(135deg, #FFF3E0 0%, #FFFDF9 50%, #FFE082 100%)"
+      };
+    } else {
+      colors = {
+        primary: "#FFD54F",
+        primaryContainer: "#1E293B",
+        secondary: "#94A3B8",
+        secondaryContainer: "#0F172A",
+        surface: "#0F172A",
+        onSurface: "#F8FAFC",
+        onSurfaceVariant: "#CBD5E1",
+        surfaceContainer: "#1E293B",
+        surfaceContainerHigh: "#334155",
+        surfaceContainerHighest: "#475569",
+        surfaceContainerLow: "#0F172A",
+        surfaceContainerLowest: "#020617",
+        background: "linear-gradient(135deg, #020617 0%, #0F172A 50%, #1E293B 100%)"
+      };
+    }
+  } else if (condition === "Cloudy") {
+    if (!isNight) {
+      colors = {
+        primary: "#455A64",
+        primaryContainer: "#ECEFF1",
+        secondary: "#546E7A",
+        secondaryContainer: "#CFD8DC",
+        surface: "#FAFAFA",
+        onSurface: "#212121",
+        onSurfaceVariant: "#424242",
+        surfaceContainer: "#ECEFF1",
+        surfaceContainerHigh: "#E0E0E0",
+        surfaceContainerHighest: "#BDBDBD",
+        surfaceContainerLow: "#F5F5F5",
+        surfaceContainerLowest: "#FFFFFF",
+        background: "linear-gradient(135deg, #ECEFF1 0%, #FAFAFA 50%, #B0BEC5 100%)"
+      };
+    } else {
+      colors = {
+        primary: "#90A4AE",
+        primaryContainer: "#263238",
+        secondary: "#455A64",
+        secondaryContainer: "#1A1A24",
+        surface: "#12121A",
+        onSurface: "#ECEFF1",
+        onSurfaceVariant: "#B0BEC5",
+        surfaceContainer: "#1C1C26",
+        surfaceContainerHigh: "#2A2A38",
+        surfaceContainerHighest: "#38384D",
+        surfaceContainerLow: "#0E0E14",
+        surfaceContainerLowest: "#05050A",
+        background: "linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #1E1E2F 100%)"
+      };
+    }
+  } else if (condition === "Rainy") {
+    if (!isNight) {
+      colors = {
+        primary: "#00796B",
+        primaryContainer: "#E0F2F1",
+        secondary: "#004D40",
+        secondaryContainer: "#B2DFDB",
+        surface: "#F4FBFB",
+        onSurface: "#00252A",
+        onSurfaceVariant: "#004D40",
+        surfaceContainer: "#E0F2F1",
+        surfaceContainerHigh: "#B2DFDB",
+        surfaceContainerHighest: "#80CBC4",
+        surfaceContainerLow: "#E0F7F4",
+        surfaceContainerLowest: "#FFFFFF",
+        background: "linear-gradient(135deg, #E0F2F1 0%, #F4FBFB 50%, #80CBC4 100%)"
+      };
+    } else {
+      colors = {
+        primary: "#4DB6AC",
+        primaryContainer: "#00252A",
+        secondary: "#26A69A",
+        secondaryContainer: "#004D40",
+        surface: "#0A191D",
+        onSurface: "#E0F2F1",
+        onSurfaceVariant: "#80CBC4",
+        surfaceContainer: "#0F2E35",
+        surfaceContainerHigh: "#1A4650",
+        surfaceContainerHighest: "#2A6472",
+        surfaceContainerLow: "#061316",
+        surfaceContainerLowest: "#010607",
+        background: "linear-gradient(135deg, #020C0E 0%, #0A191D 50%, #133038 100%)"
+      };
+    }
+  } else if (condition === "Snowy") {
+    if (!isNight) {
+      colors = {
+        primary: "#0288D1",
+        primaryContainer: "#E1F5FE",
+        secondary: "#0097A7",
+        secondaryContainer: "#B3E5FC",
+        surface: "#F7FCFF",
+        onSurface: "#01579B",
+        onSurfaceVariant: "#0288D1",
+        surfaceContainer: "#E1F5FE",
+        surfaceContainerHigh: "#B3E5FC",
+        surfaceContainerHighest: "#81D4FA",
+        surfaceContainerLow: "#F0F9FF",
+        surfaceContainerLowest: "#FFFFFF",
+        background: "linear-gradient(135deg, #E1F5FE 0%, #F7FCFF 50%, #B3E5FC 100%)"
+      };
+    } else {
+      colors = {
+        primary: "#81D4FA",
+        primaryContainer: "#0D1F2D",
+        secondary: "#B39DDB",
+        secondaryContainer: "#0B132B",
+        surface: "#0B1425",
+        onSurface: "#E1F5FE",
+        onSurfaceVariant: "#81D4FA",
+        surfaceContainer: "#12263A",
+        surfaceContainerHigh: "#1F3D5A",
+        surfaceContainerHighest: "#2C537A",
+        surfaceContainerLow: "#060D1A",
+        surfaceContainerLowest: "#02040A",
+        background: "linear-gradient(135deg, #030712 0%, #0B1425 50%, #1E293B 100%)"
+      };
+    }
+  } else if (condition === "Stormy") {
+    if (!isNight) {
+      colors = {
+        primary: "#673AB7",
+        primaryContainer: "#D1C4E9",
+        secondary: "#512DA8",
+        secondaryContainer: "#B39DDB",
+        surface: "#FAF8FF",
+        onSurface: "#1A0933",
+        onSurfaceVariant: "#311B92",
+        surfaceContainer: "#D1C4E9",
+        surfaceContainerHigh: "#B39DDB",
+        surfaceContainerHighest: "#9575CD",
+        surfaceContainerLow: "#E8E0F5",
+        surfaceContainerLowest: "#FFFFFF",
+        background: "linear-gradient(135deg, #D1C4E9 0%, #FAF8FF 50%, #9575CD 100%)"
+      };
+    } else {
+      colors = {
+        primary: "#B39DDB",
+        primaryContainer: "#120C1F",
+        secondary: "#7E57C2",
+        secondaryContainer: "#2A1B4E",
+        surface: "#0E091A",
+        onSurface: "#EDE7F6",
+        onSurfaceVariant: "#D1C4E9",
+        surfaceContainer: "#1E1436",
+        surfaceContainerHigh: "#322259",
+        surfaceContainerHighest: "#4A3382",
+        surfaceContainerLow: "#06040C",
+        surfaceContainerLowest: "#020104",
+        background: "linear-gradient(135deg, #05030A 0%, #0E091A 50%, #1C1233 100%)"
+      };
+    }
+  }
+
+  return {
+    "--primary": colors.primary,
+    "--primary-container": colors.primaryContainer,
+    "--secondary": colors.secondary,
+    "--secondary-container": colors.secondaryContainer,
+    "--surface": colors.surface,
+    "--on-surface": colors.onSurface,
+    "--on-surface-variant": colors.onSurfaceVariant,
+    "--surface-container": colors.surfaceContainer,
+    "--surface-container-high": colors.surfaceContainerHigh,
+    "--surface-container-highest": colors.surfaceContainerHighest,
+    "--surface-container-low": colors.surfaceContainerLow,
+    "--surface-container-lowest": colors.surfaceContainerLowest,
+    "--background-gradient": colors.background,
+    "--on-background": colors.onSurface
+  } as React.CSSProperties;
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -73,6 +283,18 @@ export default function App() {
   useEffect(() => {
     fetchWeatherByCity("Phnom Penh");
   }, []);
+
+  // Synchronize dynamic palette variables to documentElement (:root)
+  useEffect(() => {
+    if (!weather) return;
+    const styles = getThemeStyles(weather.condition, weather.isNight);
+    const root = document.documentElement;
+    Object.entries(styles).forEach(([key, value]) => {
+      if (key.startsWith("--")) {
+        root.style.setProperty(key, value as string);
+      }
+    });
+  }, [weather]);
 
   // Sync to local storage helper
   const updateHistory = (item: SearchHistoryItem) => {
@@ -168,10 +390,13 @@ export default function App() {
   };
 
   // Condition icons and background colors mapping
-  const getWeatherIcon = (cond: string, className = "w-12 h-12") => {
+  const getWeatherIcon = (cond: string, className = "w-12 h-12", isNightMode = false) => {
     switch (cond) {
       case "Sunny":
-        return <Sun className={`${className} text-amber-500 animate-spin-slow`} />;
+      case "Clear":
+        return isNightMode 
+          ? <Moon className={`${className} text-indigo-300`} /> 
+          : <Sun className={`${className} text-amber-500 animate-spin-slow`} />;
       case "Cloudy":
         return <Cloud className={`${className} text-indigo-400`} />;
       case "Rainy":
@@ -181,7 +406,9 @@ export default function App() {
       case "Stormy":
         return <CloudLightning className={`${className} text-purple-500`} />;
       default:
-        return <Sun className={`${className} text-amber-500`} />;
+        return isNightMode
+          ? <Moon className={`${className} text-indigo-300`} />
+          : <Sun className={`${className} text-amber-500`} />;
     }
   };
 
@@ -215,7 +442,11 @@ export default function App() {
   };
 
   return (
-    <div id="aether-app-wrapper" className="flex min-h-screen text-on-surface antialiased relative">
+    <div 
+      id="aether-app-wrapper" 
+      className="flex min-h-screen text-on-surface antialiased relative transition-all duration-700 overflow-x-hidden"
+      style={getThemeStyles(weather?.condition, weather?.isNight)}
+    >
       
       {/* SIDEBAR NAVIGATION - DESKTOP */}
       <Sidebar 
@@ -227,7 +458,7 @@ export default function App() {
       />
 
       {/* MAIN CONTAINER */}
-      <main id="main-scroller" className="flex-1 flex flex-col h-screen overflow-y-auto hide-scrollbar pb-24 md:pb-6">
+      <main id="main-scroller" className="flex-1 flex flex-col min-h-screen pb-24 md:pb-6">
         
         {/* NAVBAR */}
         <Navbar 
@@ -305,7 +536,10 @@ export default function App() {
                         {weather.dateText} | {weather.timeText}
                       </p>
                       {weather.isFallback && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
+                        <span 
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20"
+                          title="Gemini API rate-limited or quota exceeded. Running on high-fidelity local simulation engine."
+                        >
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
                           Local Cozy Fallback Mode
                         </span>
@@ -340,7 +574,7 @@ export default function App() {
                   </div>
 
                   <div className="w-48 h-48 z-10 mt-6 md:mt-0 flex items-center justify-center bg-primary-container/20 rounded-full border border-primary-container/30 relative">
-                    <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center shadow-inner">
+                    <div className="absolute inset-4 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-inner">
                       {getWeatherIcon(weather.condition, "w-28 h-28 animate-pulse")}
                     </div>
                   </div>
@@ -402,13 +636,13 @@ export default function App() {
                     </div>
                     
                     {/* Hourly view togglers */}
-                    <div className="flex bg-surface-container-high rounded-full p-1 border border-primary-container/25">
+                    <div className="flex w-full md:w-auto bg-surface-container-high rounded-full p-1 border border-primary-container/25">
                       <button 
                         id="toggle-hourly-btn"
                         onClick={() => setHourlyView("hourly")}
-                        className={`px-5 py-1.5 rounded-full font-bold text-xs bubbly-text transition-all ${
+                        className={`flex-1 px-2 md:px-5 py-2 md:py-1.5 rounded-full font-bold text-[10px] md:text-xs bubbly-text transition-all whitespace-nowrap ${
                           hourlyView === "hourly" 
-                            ? "bg-white text-primary shadow-sm" 
+                            ? "bg-primary text-primary-container shadow-sm" 
                             : "text-on-surface-variant hover:text-primary"
                         }`}
                       >
@@ -417,9 +651,9 @@ export default function App() {
                       <button 
                         id="toggle-precip-btn"
                         onClick={() => setHourlyView("precip")}
-                        className={`px-5 py-1.5 rounded-full font-bold text-xs bubbly-text transition-all ${
+                        className={`flex-1 px-2 md:px-5 py-2 md:py-1.5 rounded-full font-bold text-[10px] md:text-xs bubbly-text transition-all whitespace-nowrap ${
                           hourlyView === "precip" 
-                            ? "bg-white text-primary shadow-sm" 
+                            ? "bg-primary text-primary-container shadow-sm" 
                             : "text-on-surface-variant hover:text-primary"
                         }`}
                       >
@@ -428,35 +662,49 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between gap-4 overflow-x-auto pb-4 hide-scrollbar">
-                    {weather.forecast24Hours.map((h, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`flex flex-col items-center min-w-[90px] gap-3 p-4 rounded-[2rem] border transition-all ${
-                          idx === 0 
-                            ? "bg-primary-container/20 border-primary-container" 
-                            : "border-transparent hover:bg-surface-container-high"
-                        }`}
-                      >
-                        <span className="font-bold text-xs text-on-surface-variant">{h.time}</span>
-                        {getWeatherIcon(h.condition, "w-8 h-8")}
-                        
-                        {hourlyView === "hourly" ? (
-                          <span className="bubbly-text font-black text-base text-primary">
-                            {formatTemp(h.temp)}
-                          </span>
-                        ) : (
-                          <span className="bubbly-text font-black text-xs text-teal-600">
-                            {h.precipProb || 10}%
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory -mx-6 px-6 md:-mx-8 md:px-8">
+                    {weather.forecast24Hours.map((h, idx) => {
+                      let isHourNight = weather.isNight;
+                      if (h.time !== "Now") {
+                        const match = h.time.match(/(\d+)\s*(AM|PM)/i);
+                        if (match) {
+                          let hour = parseInt(match[1]);
+                          const ampm = match[2].toUpperCase();
+                          if (ampm === "PM" && hour < 12) hour += 12;
+                          if (ampm === "AM" && hour === 12) hour = 0;
+                          isHourNight = hour >= 18 || hour < 6;
+                        }
+                      }
+                      
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`flex flex-col items-center min-w-[90px] shrink-0 snap-start gap-3 p-4 rounded-[2rem] border transition-all ${
+                            idx === 0 
+                              ? "bg-primary-container/20 border-primary-container" 
+                              : "border-transparent hover:bg-surface-container-high"
+                          }`}
+                        >
+                          <span className="font-bold text-xs text-on-surface-variant">{h.time}</span>
+                          {getWeatherIcon(h.condition, "w-8 h-8", isHourNight)}
+                          
+                          {hourlyView === "hourly" ? (
+                            <span className={`bubbly-text font-black text-base ${isHourNight ? 'text-indigo-400' : 'text-amber-500'}`}>
+                              {formatTemp(h.temp)}
+                            </span>
+                          ) : (
+                            <span className="bubbly-text font-black text-xs text-teal-600">
+                              {h.precipProb || 10}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
                 {/* 4. DETAILED METRICS GRID */}
-                <section id="metrics-grid-section" className="md:col-span-12 grid grid-cols-2 lg:grid-cols-5 gap-6">
+                <section id="metrics-grid-section" className="md:col-span-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                   
                   {/* UV Index */}
                   <div className="kawaii-card p-6 flex flex-col justify-between aspect-square">
@@ -564,6 +812,28 @@ export default function App() {
                       <div 
                         className="absolute h-full bg-rose-400 rounded-full"
                         style={{ width: `${Math.max(10, Math.min(100, (weather.metrics.pressure.value - 950) * 1.5))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Air Quality Index */}
+                  <div className="kawaii-card p-6 flex flex-col justify-between aspect-square">
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <Wind className="w-5 h-5 text-purple-500" />
+                      <h4 className="bubbly-text text-xs font-black tracking-wide">AQI</h4>
+                    </div>
+                    <div>
+                      <p className="bubbly-text text-4xl md:text-5xl font-black text-primary leading-none">
+                        {weather.metrics.aqi?.value || '--'}
+                      </p>
+                      <p className="text-sm font-bold text-tertiary mt-2">
+                        {weather.metrics.aqi?.label || 'Good'}
+                      </p>
+                    </div>
+                    <div className="w-full h-2.5 bg-surface-container-high rounded-full relative overflow-hidden">
+                      <div 
+                        className="absolute h-full bg-purple-400 rounded-full"
+                        style={{ width: `${Math.max(5, Math.min(100, ((weather.metrics.aqi?.value || 0) / 300) * 100))}%` }}
                       />
                     </div>
                   </div>
@@ -846,7 +1116,7 @@ export default function App() {
       </main>
 
       {/* MOBILE BOTTOM NAVBAR */}
-      <nav id="mobile-bottom-nav" className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t-2 border-primary-container flex justify-around items-center h-20 px-4 z-40 rounded-t-3xl shadow-lg">
+      <nav id="mobile-bottom-nav" className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest/95 backdrop-blur-md border-t-2 border-primary-container flex justify-around items-center h-20 px-4 z-40 rounded-t-3xl shadow-lg">
         <button 
           onClick={() => setActiveTab("dashboard")}
           className={`flex flex-col items-center gap-1 transition-all ${activeTab === "dashboard" ? "text-primary scale-105" : "text-on-surface-variant/80"}`}
@@ -877,7 +1147,7 @@ export default function App() {
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-3xl p-6 md:p-10 max-w-md w-full relative border-2 border-primary-container"
+            className="bg-surface-container-lowest rounded-3xl p-6 md:p-10 max-w-md w-full relative border-2 border-primary-container"
           >
             <button 
               onClick={() => setShowPremiumModal(false)}
@@ -934,7 +1204,7 @@ export default function App() {
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto relative border-2 border-primary-container"
+            className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 max-w-lg w-full max-h-[85vh] overflow-y-auto relative border-2 border-primary-container"
           >
             <button 
               onClick={() => setShowHelpModal(false)}
@@ -981,7 +1251,7 @@ export default function App() {
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full relative border-2 border-primary-container"
+            className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 max-w-md w-full relative border-2 border-primary-container"
           >
             <button 
               onClick={() => setShowSettingsModal(false)}
