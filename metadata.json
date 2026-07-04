@@ -1,0 +1,6 @@
+{
+  "name": "AetherWeather",
+  "description": "A cozy, aesthetic weather dashboard featuring real-time city forecasts, custom 7-day and 24-hour forecasts, visual precipitation mapping, search history, and personalized cozy activity advice powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
